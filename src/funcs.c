@@ -1878,9 +1878,6 @@ static int SunStuff(int rise, double cosz, int jul)
 
     FromJulian(jul, &year, &mon, &day);
 
-    if (rise > 1)
-	rise -= 2;
-
 /* Following formula on page B6 exactly... */
     t = (double) jul;
     if (rise) {
@@ -1982,7 +1979,7 @@ static int FSun(int rise, func_info *info)
 	jul = DATEPART(ARG(0));
     }
 
-    r = SunStuff(rise, cosz, jul);
+    r = SunStuff(rise % 2, cosz, jul);
     if (r == NO_TIME) {
 	RETVAL = 0;
 	RetVal.type = INT_TYPE;
