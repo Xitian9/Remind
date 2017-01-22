@@ -97,6 +97,7 @@ static	int	FMinute		(func_info *);
 static	int	FMinsfromutc	(func_info *);
 static	int	FMoondate	(func_info *);
 static	int	FMoondatetime	(func_info *);
+static	int	FMoonillum	(func_info *);
 static	int	FMoonphase	(func_info *);
 static	int	FMoontime	(func_info *);
 static	int	FMon		(func_info *);
@@ -237,6 +238,7 @@ BuiltinFunc Func[] = {
     {   "monnum",       1,      1,      1,          FMonnum },
     {   "moondate",     1,      3,      0,          FMoondate },
     {   "moondatetime", 1,      3,      0,          FMoondatetime },
+    {   "moonillum",    0,      2,      0,          FMoonillum },
     {   "moonphase",    0,      2,      0,          FMoonphase },
     {   "moontime",     1,      3,      0,          FMoontime },
     {   "ndawn",        0,      1,      0,          FNDawn},
@@ -2285,6 +2287,46 @@ static int FMoonphase(func_info *info)
 
     RetVal.type = INT_TYPE;
     RETVAL = MoonPhase(date, time);
+    return OK;
+}
+
+/***************************************************************/
+/*                                                             */
+/*  FMoonillum                                                 */
+/*                                                             */
+/*  Illuminated percentage of moon for specified date/time.    */
+/*                                                             */
+/***************************************************************/
+static int FMoonillum(func_info *info)
+{
+    int date, time;
+
+    switch(Nargs) {
+    case 0:
+	date = JulianToday;
+	time = 0;
+	break;
+    case 1:
+	if (!HASDATE(ARG(0))) return E_BAD_TYPE;
+	date = DATEPART(ARG(0));
+	if (HASTIME(ARG(0))) {
+	    time = TIMEPART(ARG(0));
+	} else {
+	    time = 0;
+	}
+	break;
+    case 2:
+	if (ARG(0).type == DATETIME_TYPE) return E_2MANY_ARGS;
+	if (ARG(0).type != DATE_TYPE && ARG(1).type != TIME_TYPE) return E_BAD_TYPE;
+	date = ARGV(0);
+	time = ARGV(1);
+	break;
+
+    default: return E_SWERR;
+    }
+
+    RetVal.type = INT_TYPE;
+    RETVAL = MoonIllum(date, time);
     return OK;
 }
 

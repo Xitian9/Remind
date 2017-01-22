@@ -533,6 +533,35 @@ int MoonPhase(int date, int time)
 
 /***************************************************************/
 /*                                                             */
+/*  MoonIllum                                                  */
+/*                                                             */
+/*  Interface routine dealing in Remind representations.       */
+/*  Given a local date and time, returns the percentage        */
+/*  of the moon illuminated.                                   */
+/*                                                             */
+/***************************************************************/
+int MoonIllum(int date, int time)
+{
+    int utcd, utct;
+    int y, m, d;
+    double jd, il;
+
+    /* Convert from local to UTC */
+    LocalToUTC(date, time, &utcd, &utct);
+
+    /* Convert from Remind representation to year/mon/day */
+    FromJulian(utcd, &y, &m, &d);
+
+    /* Convert to a true Julian date -- sorry for the name clashes! */
+    jd = jtime(y, m, d, (utct / 60), (utct % 60), 0);
+
+    /* Calculate moon phase */
+    phase(jd, &il, NULL, NULL, NULL, NULL, NULL);
+    return (int) (100.0 * il);
+}
+
+/***************************************************************/
+/*                                                             */
 /*  HuntPhase                                                  */
 /*                                                             */
 /*  Given a starting date and time and a target phase, find    */

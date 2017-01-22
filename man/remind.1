@@ -2520,6 +2520,11 @@ For example, the following returns the date and time of the next full moon:
 This function is similar to \fBmoondate\fR and \fBmoontime\fR, but returns
 a DATETIME result.
 .TP
+.B moonillum([d_date [,t_time]]) \fRor\fB moonillum(q_datetime)
+This function returns the percentage of the moon which is illuminated on
+\fIdate\fR and \fItime\fR, which default to \fBtoday()\fR and midnight,
+respectively.
+.TP
 .B moonphase([d_date [,t_time]]) \fRor\fB moonphase(q_datetime)
 This function returns the phase of the moon on \fIdate\fR and \fItime\fR,
 which default to \fBtoday()\fR and midnight, respectively.  The returned
