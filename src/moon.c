@@ -557,7 +557,7 @@ int MoonIllum(int date, int time)
 
     /* Calculate moon phase */
     phase(jd, &il, NULL, NULL, NULL, NULL, NULL);
-    return (int) (100.0 * il);
+    return (int) (100.0 * il + 0.5);
 }
 
 /***************************************************************/
