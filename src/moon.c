@@ -85,7 +85,7 @@ static double phase (double, double *, double *, double *, double *, double *, d
 
 /*  Astronomical constants  */
 
-#define epoch	    2444238.5	   /* 1980 January 0.0 */
+#define epoch       2444238.5      /* 1980 January 0.0 */
 
 /*  Constants defining the Sun's apparent orbit  */
 
@@ -137,6 +137,7 @@ static double phase (double, double *, double *, double *, double *, double *, d
 #define abs(x) ((x) < 0 ? (-(x)) : (x)) 		  /* Absolute val */
 
 #define fixangle(a) ((a) - 360.0 * (floor((a) / 360.0)))  /* Fix angle	  */
+#define fixhour(t) ((t) - 24.0 * (floor((t) / 24.0)))  /* Fix hour	  */
 #define torad(d) ((d) * (PI / 180.0))			  /* Deg->Rad	  */
 #define todeg(d) ((d) * (180.0 / PI))			  /* Rad->Deg	  */
 #define dsin(x) (sin(torad((x))))			  /* Sin from deg */
@@ -609,3 +610,87 @@ int MoonIllum(int date, int time)
     return (int) (100.0 * il + 0.5);
 }
 
+/***************************************************************/
+/*                                                             */
+/*  moonrise --  Calculate time of moonrise/set:               */
+/*                                                             */
+/*  Algorithm from Explanatory supplement to the astronomical  */
+/*  almanac, from The nautical almanac office of the US naval  */
+/*  observatory, 1992, pp. 486-489.                            */
+/*                                                             */
+/***************************************************************/
+double MoonRise(int rise, double pdate)
+{
+
+    FILE * fp;
+    fp = fopen("moontest.txt", "w+");
+
+    double ec, lon, lat, gst, gha, dec, par, h, ut, ut0, cost;
+    spherical_point mp;
+    int n, nfail, hours, mins;
+
+    ec = (pdate + epoch - 2451545.0) / 36525;    /* Julian centuries since J2000 */
+    lat = -35.0 - 18.0/60 - 27.0/3600;   /* Latitude of observer */
+    lon = 149.0 + 7.0/60 + 27.9/3600;   /* Longitude of observer */
+
+    fprintf(fp, "%f\n", pdate + epoch);
+
+    ut = 12;       /* First iteration */
+    nfail = 0;
+    n = 0;
+
+    do {
+    ut0 = ut;
+    mp = geocentric_moon_position(ec + ut0 / 876600);
+
+    /* Greenwich mean sidereal time in seconds */
+    gst = 24100.54841 + 8640184.812866 * ec + 0.093104 * ec * ec - 0.0000062 * ec * ec * ec;
+    //gst = 18.697374558 + 24.06570982441908 * 36525 * ec; /* in hours? */
+    gha = (gst - mp.longitude / 15) / 3600; /* Greenwich hour angle */
+    dec = mp.latitude / 3600;
+    par = 1;  /* Horizontal parallax is approx 1 deg. FIXME: Improve this */
+
+    /* Apparent altitude of upper limb of moon at moonrise/set */
+    h = - 34.0 / 60.0 + 0.7275 * par;
+
+    /* Get hour angle at ut0 */
+    cost = (dsin(h) - dsin(lat) * dsin(dec)) / (dcos(lat) * dcos(dec));
+
+    if (cost > 1) {
+        /* Never set */
+        cost = 1;
+        if (nfail >= 0)
+            nfail += 1;
+        else
+            nfail = 1;
+    } else if (cost < -1) {
+        /* Never rise */
+        cost = -1;
+        if (nfail <= 0)
+            nfail -= 1;
+        else
+            nfail = -1;
+    } else {
+        nfail = 0;
+    }
+
+    /* Calculate time of rise/set iteratively */
+    if (rise == 1)
+        ut = ut0 - gha - ( lon + todeg(acos(cost)) ) / 15;
+    else
+        ut = ut0 - gha - ( lon - todeg(acos(cost)) ) / 15;
+    ut = fixhour(ut);
+
+    fprintf(fp, "ut0 %f, Dec %f, GHA %f, Dist %f, t %f, nfail %d\n", ut0, dec, fixhour(gha), mp.distance, todeg(acos(cost)), nfail);
+    fflush(fp);
+
+    } while (n++ < 20); //(abs(ut - ut0) >= 0.008);
+
+    /* TODO: Check for never rise/set */
+    hours = floor(ut);
+    mins = floor((ut-hours) * 60);
+
+    fclose(fp);
+
+    return hours*60 + mins;
+}

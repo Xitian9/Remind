@@ -99,6 +99,8 @@ static	int	FMoondate	(func_info *);
 static	int	FMoondatetime	(func_info *);
 static	int	FMoonillum	(func_info *);
 static	int	FMoonphase	(func_info *);
+static	int	FMoonrise 	(func_info *);
+static	int	FMoonset  	(func_info *);
 static	int	FMoontime	(func_info *);
 static	int	FMon		(func_info *);
 static	int	FMonnum		(func_info *);
@@ -240,6 +242,8 @@ BuiltinFunc Func[] = {
     {   "moondatetime", 1,      3,      0,          FMoondatetime },
     {   "moonillum",    0,      2,      0,          FMoonillum },
     {   "moonphase",    0,      2,      0,          FMoonphase },
+    {   "moonrise",     0,      2,      0,          FMoonrise  },
+    {   "moonset",      0,      2,      0,          FMoonset   },
     {   "moontime",     1,      3,      0,          FMoontime },
     {   "ndawn",        0,      1,      0,          FNDawn},
     {   "ndusk",        0,      1,      0,          FNDusk},
@@ -2328,6 +2332,46 @@ static int FMoonillum(func_info *info)
     RetVal.type = INT_TYPE;
     RETVAL = MoonIllum(date, time);
     return OK;
+}
+
+/***************************************************************/
+/*                                                             */
+/*  FMoonriseStuff                                             */
+/*                                                             */
+/*  Time of moonrise/set on a specified date/time.             */
+/*                                                             */
+/***************************************************************/
+int FMoonriseStuff(int rise, func_info *info)
+{
+    int jul = JulianToday;
+    int r;
+
+    if (Nargs >= 1) {
+	if (!HASDATE(ARG(0))) return E_BAD_TYPE;
+	jul = DATEPART(ARG(0));
+    }
+
+    r = MoonRise(rise, jul);
+    if (r == NO_TIME) {
+	RETVAL = 0;
+	RetVal.type = INT_TYPE;
+    } else if (r == -NO_TIME) {
+	RETVAL = MINUTES_PER_DAY;
+	RetVal.type = INT_TYPE;
+    } else {
+	RETVAL = r;
+	RetVal.type = TIME_TYPE;
+    }
+    return OK;
+}
+
+static int FMoonrise(func_info *info)
+{
+    return FMoonriseStuff(1, info);
+}
+static int FMoonset(func_info *info)
+{
+    return FMoonriseStuff(0, info);
 }
 
 /***************************************************************/
