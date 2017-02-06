@@ -134,7 +134,7 @@ void UTCToLocal (int utcdate, int utctime, int *locdate, int *loctime);
 int MoonPhase (int date, int time);
 int MoonIllum (int date, int time);
 int MoonIllum (int date, int time);
-double MoonRise (int rise, double pdate);
+int MoonRise (int rise, int jul);
 void HuntPhase (int startdate, int starttim, int phas, int *date, int *time);
 int CompareRems (int dat1, int tim1, int prio1, int dat2, int tim2, int prio2, int bydate, int bytime, int byprio, int untimed_first);
 void SigIntHandler (int d);

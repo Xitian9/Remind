@@ -142,6 +142,7 @@ static double phase (double, double *, double *, double *, double *, double *, d
 #define todeg(d) ((d) * (180.0 / PI))			  /* Rad->Deg	  */
 #define dsin(x) (sin(torad((x))))			  /* Sin from deg */
 #define dcos(x) (cos(torad((x))))			  /* Cos from deg */
+#define dtan(x) (tan(torad((x))))			  /* Tan from deg */
 
 /***************************************************************/
 /*                                                             */
@@ -527,7 +528,7 @@ int MoonPhase(int date, int time)
     FromJulian(utcd, &y, &m, &d);
 
     /* Convert to a true Julian date -- sorry for the name clashes! */
-    jd = jtime(y, m, d, (utct / 60), (utct % 60), 0);   
+    jd = jtime(y, m, d, (utct / 60), (utct % 60), 0);
 
     /* Calculate moon phase */
     mp = 360.0 * phase(jd, NULL, NULL, NULL, NULL, NULL, NULL);
@@ -559,7 +560,7 @@ void HuntPhase(int startdate, int starttim, int phas, int *date, int *time)
     /* Convert from Remind representation to year/mon/day */
     FromJulian(utcd, &y, &m, &d);
     /* Convert to a true Julian date -- sorry for the name clashes! */
-    jdorig = jtime(y, m, d, (utct / 60), (utct % 60), 0);   
+    jdorig = jtime(y, m, d, (utct / 60), (utct % 60), 0);
     jd = jdorig - 45.0;
     nt1 = meanphase(jd, 0.0, &k1);
     while(1) {
@@ -612,85 +613,131 @@ int MoonIllum(int date, int time)
 
 /***************************************************************/
 /*                                                             */
-/*  moonrise --  Calculate time of moonrise/set:               */
+/*  MoonRise --  Calculate time of moonrise/set:               */
 /*                                                             */
 /*  Algorithm from Explanatory supplement to the astronomical  */
 /*  almanac, from The nautical almanac office of the US naval  */
 /*  observatory, 1992, pp. 486-489.                            */
 /*                                                             */
 /***************************************************************/
-double MoonRise(int rise, double pdate)
+int MoonRise(int rise, int jul)
 {
+    int mins;
+    int year, mon, day;
 
-    FILE * fp;
-    fp = fopen("moontest.txt", "w+");
+    double latdeg, longdeg;
 
-    double ec, lon, lat, gst, gha, dec, par, h, ut, ut0, cost;
+    double ec, ec0, d0;
+    double gst, gha;
+    double dec, ra, cosra;
+    double l, b, e;
+    double par, a, ut, ut0, cost;
     spherical_point mp;
-    int n, nfail, hours, mins;
 
-    ec = (pdate + epoch - 2451545.0) / 36525;    /* Julian centuries since J2000 */
-    lat = -35.0 - 18.0/60 - 27.0/3600;   /* Latitude of observer */
-    lon = 149.0 + 7.0/60 + 27.9/3600;   /* Longitude of observer */
+    int ncosfail, ndayfail;
 
-    fprintf(fp, "%f\n", pdate + epoch);
+    /* Get offset from UTC */
+    if (CalculateUTC) {
+    if (CalcMinsFromUTC(jul, 12*60, &mins, NULL)) {
+        Eprint(ErrMsg[E_MKTIME_PROBLEM]);
+        return NO_TIME;
+    }
+    } else mins = MinsFromUTC;
 
-    ut = 12;       /* First iteration */
-    nfail = 0;
-    n = 0;
+    /* Get latitude and longitude */
+    longdeg = (double) LongDeg + (double) LongMin / 60.0
+                + (double) LongSec / 3600.0;
+
+    latdeg = (double) LatDeg + (double) LatMin / 60.0
+               + (double) LatSec / 3600.0;
+
+    FromJulian(jul, &year, &mon, &day);
+
+/* Julian centuries since J2000; assumes a base of 1990 */
+#if BASE != 1990
+#error Moon calculations assume a BASE of 1990!
+#endif
+    ec = (jul - 3652.5) / 36525;
+    e = 23.4392917 - 0.013005 * ec; /* Mean obliquity of the ecliptic. */
+
+    ut = 12.0; /* First iteration */
+    ncosfail = 0;
+    ndayfail = 0;
 
     do {
     ut0 = ut;
-    mp = geocentric_moon_position(ec + ut0 / 876600);
 
-    /* Greenwich mean sidereal time in seconds */
-    gst = 24100.54841 + 8640184.812866 * ec + 0.093104 * ec * ec - 0.0000062 * ec * ec * ec;
-    //gst = 18.697374558 + 24.06570982441908 * 36525 * ec; /* in hours? */
-    gha = (gst - mp.longitude / 15) / 3600; /* Greenwich hour angle */
-    dec = mp.latitude / 3600;
-    par = 1;  /* Horizontal parallax is approx 1 deg. FIXME: Improve this */
+    /* Julian centuries since J2000 */
+    ec0 = ec + (ut0 - (double) mins / 60.0) / 876600.0;
+    d0 = ec0 * 36525;  /* Julian days since J2000 */
+
+    /* Calculate the moon's position */
+    mp = geocentric_moon_position(ec0);
+    l = mp.longitude / 3600.0;
+    b = mp.latitude / 3600.0;
+
+    /* Convert from ecliptic to equatorial co-ordinates */
+    dec = todeg(asin( dsin(b) * dcos(e) + dcos(b) * dsin(e) * dsin(l) ));
+    cosra = dcos(l) * dcos(b) / dcos(dec);
+
+    /* Check the sign of sin(ra), to determine which branch of acos to use */
+    if (dcos(b) * dsin(l) * dcos(e) >= dsin(b) * dsin(e))
+        ra = todeg(acos(cosra));
+    else
+        ra = -todeg(acos(cosra));
+
+    /* Greenwich mean sidereal time in hours */
+    gst = 18.697374558 + 24.06570982441908 * d0;
+    /* Greenwich hour angle of the moon in hours */
+    gha = gst - ra / 15.0;
+
+    /* Horizontal parallax of the moon.*/
+    par = todeg(atan( 6378.137 / mp.distance ));
 
     /* Apparent altitude of upper limb of moon at moonrise/set */
-    h = - 34.0 / 60.0 + 0.7275 * par;
+    a = -34.0 / 60.0 + 0.7275 * par;
 
-    /* Get hour angle at ut0 */
-    cost = (dsin(h) - dsin(lat) * dsin(dec)) / (dcos(lat) * dcos(dec));
+    /* Assuming the moon remains stationary, get the local hour angle of rise/set */
+    cost = (dsin(a) - dsin(latdeg) * dsin(dec)) / (dcos(latdeg) * dcos(dec));
 
+    /* Check if the moon never rises/sets */
     if (cost > 1) {
-        /* Never set */
-        cost = 1;
-        if (nfail >= 0)
-            nfail += 1;
-        else
-            nfail = 1;
+        cost = 1;  /* Never sets */
+        if (ncosfail < 0) ncosfail = 0;
+        ncosfail++;
     } else if (cost < -1) {
-        /* Never rise */
-        cost = -1;
-        if (nfail <= 0)
-            nfail -= 1;
-        else
-            nfail = -1;
-    } else {
-        nfail = 0;
-    }
+        cost = -1;  /* Never rises */
+        if (ncosfail > 0) ncosfail = 0;
+        ncosfail--;
+    } else
+        ncosfail = 0;
 
-    /* Calculate time of rise/set iteratively */
+    /* Calculate UTC time of moonrise/set. */
     if (rise == 1)
-        ut = ut0 - gha - ( lon + todeg(acos(cost)) ) / 15;
+        ut = ut0 - gha - ( -longdeg + todeg(acos(cost)) ) / 15;
     else
-        ut = ut0 - gha - ( lon - todeg(acos(cost)) ) / 15;
+        ut = ut0 - gha - ( -longdeg - todeg(acos(cost)) ) / 15;
     ut = fixhour(ut);
 
-    fprintf(fp, "ut0 %f, Dec %f, GHA %f, Dist %f, t %f, nfail %d\n", ut0, dec, fixhour(gha), mp.distance, todeg(acos(cost)), nfail);
-    fflush(fp);
+    /* Check if we've rolled over to the next/previous day */
+    if (abs(ut - ut0) > 12)
+        ndayfail++;
 
-    } while (n++ < 20); //(abs(ut - ut0) >= 0.008);
+    /* Debugging
+    printf("Lat %.2f, Lon %.2f, Days %.1f, ut0 %09f, GHA %09f, t %f, ut %09f\n",
+            latdeg, longdeg, d0, ut0, fixhour(gha), todeg(acos(cost)), ut);
+    */
 
-    /* TODO: Check for never rise/set */
-    hours = floor(ut);
-    mins = floor((ut-hours) * 60);
+    /* Fail with no rise/set */
+    if (abs(ncosfail) > 3 || ndayfail > 1) {
+    if (rise) return -NO_TIME;
+    else      return NO_TIME;
+    }
 
-    fclose(fp);
+    } while (abs(ut - ut0) >= 0.008);
 
-    return hours*60 + mins;
+    mins = (int) floor(ut * 60 + 0.5);
+    if (mins == 1440) mins = 1439;
+
+    return mins;
 }
