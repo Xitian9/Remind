@@ -2531,6 +2531,27 @@ which default to \fBtoday()\fR and midnight, respectively.  The returned
 value is an integer from 0 to 359, representing the phase of the moon
 in degrees.  0 is a new moon, 180 is a full moon, 90 is first-quarter, etc.
 .TP
+.B moonrise([dq_date])
+Returns a \fBTIME\fR indicating the time of moonrise on the specified
+\fIdate\fR (default \fBtoday()\fR.)  There may be no moonrise on a particular
+day, once a month around first quarter, or because of of high latitudes, in
+which case \fBmoonrise()\fR returns the \fBINT\fR 1440.
+.TP
+.B moonset([dq_date])
+Returns a \fBTIME\fR indicating the time of moonset on the specified
+\fIdate\fR (default \fBtoday()\fR.)  There may be no moonset on a particular
+day, once a month around third quarter, or because of high latitudes, in which
+case \fBmoonset()\fR returns the \fBINT\fR 0.
+.RS
+.PP
+The functions \fBmoonrise()\fR and \fBmoonset()\fR are based on
+an algorithm in "Explanatory supplement to the astronomical almanac" by the
+Nautical Almanac Office, USNO.  They require the latitude and longitude to be
+specified by setting the appropriate system variables.  (See "System
+Variables".)  The moon functions should be accurate to within about 3 minutes
+for latitudes lower than 60 degrees.
+.RE
+.TP
 .B ndawn([dq_date])
 Returns the time of "nautical dawn" on the specified \fIdate\fR.  If
 \fIdate\fR is omitted, defaults to \fBtoday()\fR.  If a \fIdatetime\fR object
