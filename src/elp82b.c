@@ -162697,11 +162697,11 @@ void GetElp82bSphericalCoor(double t,double r[3]) {
                         accu,stack);
 
     /* calculate r1,r2,r3: */
-  r[0] =   (accu[0] + w[0]
+  r[0] =    accu[0] + w[0]
        + t*(accu[3] + w[1]
        + t*(accu[6] + w[2]
        + t*(          w[3]
-       + t*           w[4])))) * (M_PI/(180*3600));
-  r[1] = (accu[1] + t*(accu[4] + t*accu[7])) * (M_PI/(180*3600));
-  r[2] = (accu[2] + t*(accu[5] + t*accu[8])) * a0_div_ath_times_au;
+       + t*           w[4])));
+  r[1] = accu[1] + t*(accu[4] + t*accu[7]);
+  r[2] = accu[2] + t*(accu[5] + t*accu[8]);
 }
