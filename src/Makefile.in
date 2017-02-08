@@ -49,6 +49,9 @@ rem2ps: rem2ps.o dynbuf.o
 remind: $(REMINDOBJS)
 	@CC@ @LDFLAGS@ $(LDEXTRA) -o remind $(REMINDOBJS) @LIBS@
 
+elptest: elp82b.o elptest.o
+	@CC@ @LDFLAGS@ $(LDEXTRA) -o elptest $<
+
 install-nostripped: all
 	-mkdir -p $(DESTDIR)$(bindir) || true
 	for prog in $(PROGS) $(SCRIPTS) ; do \
