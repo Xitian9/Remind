@@ -69,8 +69,7 @@
 #include "expr.h"
 #include "globals.h"
 #include "err.h"
-
-#include "elp2000-82b/elp2000-82b.h"
+#include "elp82b.h"
 
 /* Function prototypes */
 static long jdate (int y, int mon, int day);
@@ -632,7 +631,7 @@ int MoonRise(int rise, int jul)
     double dec, ra, cosra;
     double l, b, e;
     double par, a, ut, ut0, cost;
-    spherical_point mp;
+    double mp[3];
 
     int ncosfail, ndayfail;
 
@@ -672,9 +671,9 @@ int MoonRise(int rise, int jul)
     d0 = ec0 * 36525;  /* Julian days since J2000 */
 
     /* Calculate the moon's position */
-    mp = geocentric_moon_position(ec0);
-    l = mp.longitude / 3600.0;
-    b = mp.latitude / 3600.0;
+    GetElp82bSphericalCoor(ec0 * 36525, mp);
+    l = mp[0];
+    b = mp[1];
 
     /* Convert from ecliptic to equatorial co-ordinates */
     dec = todeg(asin( dsin(b) * dcos(e) + dcos(b) * dsin(e) * dsin(l) ));
@@ -692,7 +691,8 @@ int MoonRise(int rise, int jul)
     gha = gst - ra / 15.0;
 
     /* Horizontal parallax of the moon.*/
-    par = todeg(atan( 6378.137 / mp.distance ));
+    //par = todeg(atan( 6378.137 / (mp[2] / a0_div_ath_times_au) ));
+    par = 1;
 
     /* Apparent altitude of upper limb of moon at moonrise/set */
     a = -34.0 / 60.0 + 0.7275 * par;

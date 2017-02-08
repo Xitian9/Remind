@@ -29,12 +29,10 @@ MANS=		$(srcdir)/../man/rem2ps.1 $(srcdir)/../man/remind.1 \
 
 REMINDSRCS=	calendar.c dynbuf.c dorem.c dosubst.c expr.c files.c funcs.c \
 		globals.c hbcal.c init.c main.c md5.c moon.c omit.c queue.c \
-		sort.c token.c trigger.c userfns.c utils.c var.c \
-		elp2000-82b/elp2000-82b.c elp2000-82b/arguments.c elp2000-82b/series.c
+		sort.c token.c trigger.c userfns.c utils.c var.c elp82b.c
 
 REMINDHDRS=config.h custom.h dynbuf.h err.h expr.h globals.h lang.h \
-	   md5.h protos.h rem2ps.h types.h version.h \
-	   elp2000-82b/elp2000-82b.h elp2000-82b/arguments.h elp2000-82b/series.h
+	   md5.h protos.h rem2ps.h types.h version.h elp82b.h
 REMINDOBJS= $(REMINDSRCS:.c=.o)
 
 all: remind rem2ps
