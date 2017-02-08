@@ -7,7 +7,7 @@ ftp://ftp.imcce.fr/pub/ephem/moon/elp82b
 I (Johannes Gajdosik) have just taken the Fortran code and data
 obtained from above and used it to create this piece of software.
 
-I can neigther allow nor forbid the usage of ELP2000-82B.
+I can neither allow nor forbid the usage of ELP2000-82B.
 The copyright notice below covers not the works of
 Chapront-Touze M. and Chapront J., but just my work,
 that is the compilation and rearrangement of
@@ -39,7 +39,6 @@ My implementation of ELP2000-82B has the following modifications compared to
 the original Fortran code:
 1) fundamentally rearrange the series into optimized instructions
    for fast calculation of the results
-2) units are: julian day, AU
 
 ****************************************************************/
 
@@ -47,12 +46,13 @@ the original Fortran code:
 #ifndef _ELP82B_H_
 #define _ELP82B_H_
 
-void GetElp82bSphericalCoor(double t,double r[3]);
+void GetElp82bSphericalCoor(double t, double r[3]);
 
   /* Return the spherical coordinates of the earths moon
-     on the given julian date jd expressed in dynamical time (TAI+32.184s).
-     The origin of the xyz-coordinates is the center of the earth.
-     The reference frame is "dynamical equinox and ecliptic J2000",
+     at time t expressed in julian centuries since J2000. The position is
+     expressed in arcseconds of longitude, arcseconds of latitude, and
+     kilometres of distance. The origin of the coordinates is the center of the
+     earth. The reference frame is "dynamical equinox and ecliptic J2000",
      which is the reference frame in VSOP87 and VSOP87A.
 
      According to vsop87.doc VSOP87 coordinates can be transformed to FK5 by

@@ -39,7 +39,6 @@ My implementation of ELP2000-82B has the following modifications compared to
 the original Fortran code:
 1) fundamentally rearrange the series into optimized instructions
    for fast calculation of the results
-2) units are: julian day, AU
 
 ****************************************************************/
 
