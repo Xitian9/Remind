@@ -629,9 +629,8 @@ int MoonRise(int rise, int jul)
     double ec, ec0, d0;
     double gst, gha;
     double dec, ra, cosra;
-    double l, b, e;
+    double mp[3], l, b, e;
     double par, a, ut, ut0, cost;
-    double mp[3];
 
     int ncosfail, ndayfail;
 
@@ -671,9 +670,9 @@ int MoonRise(int rise, int jul)
     d0 = ec0 * 36525;  /* Julian days since J2000 */
 
     /* Calculate the moon's position */
-    GetElp82bSphericalCoor(ec0 * 36525, mp);
-    l = mp[0];
-    b = mp[1];
+    GetElp82bSphericalCoor(ec0, mp);
+    l = mp[0] / 3600.0;
+    b = mp[1] / 3600.0;
 
     /* Convert from ecliptic to equatorial co-ordinates */
     dec = todeg(asin( dsin(b) * dcos(e) + dcos(b) * dsin(e) * dsin(l) ));
@@ -691,8 +690,7 @@ int MoonRise(int rise, int jul)
     gha = gst - ra / 15.0;
 
     /* Horizontal parallax of the moon.*/
-    //par = todeg(atan( 6378.137 / (mp[2] / a0_div_ath_times_au) ));
-    par = 1;
+    par = todeg(atan( 6378.137 / mp[2] ));
 
     /* Apparent altitude of upper limb of moon at moonrise/set */
     a = -34.0 / 60.0 + 0.7275 * par;
